@@ -10,7 +10,7 @@ struct FontStashComponent : Component
 {
     int font = 0;
     int align = FONS_ALIGN_LEFT;
-    float size = 32;
+    float size = 48;
     unsigned int color = 0xFFFFFFFF;
     float blur = 0;
     float spacing = 0;
