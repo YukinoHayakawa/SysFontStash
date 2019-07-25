@@ -200,7 +200,9 @@ void FontStashSystem::createPipelines()
     }
     // Vertex Inputs
     {
-        compiler->setVertexBufferBinding(0, sizeof(ImDrawVert));
+        compiler->setVertexBufferBinding(0, sizeof(float) * 2);
+        compiler->setVertexBufferBinding(1, sizeof(float) * 2);
+        compiler->setVertexBufferBinding(2, sizeof(std::uint32_t));
 
         compiler->setVertexAttribute(
             "Position", 0,
@@ -214,6 +216,7 @@ void FontStashSystem::createPipelines()
             "Color", 2,
             0, GpuBufferFormat::R8G8B8A8_UNORM
         );
+        compiler->iaSetPrimitiveTopology(PrimitiveTopology::TRIANGLE_LIST);
     }
     // Rasterization
     {
@@ -252,6 +255,12 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
     mCurrentCmdList->setViewport(0, { 0, 0 }, size.cast<float>());
     mCurrentCmdList->setScissor(0, { 0, 0 }, size);
     mCurrentCmdList->bindResourceSet(0, { mFontSampler, mFontTextureView });
+    mCurrentCmdList->setConstant(ShaderStage::VERTEX,
+        "screenDimensions", size.cast<float>().eval());
+    mCurrentCmdList->setConstant(ShaderStage::VERTEX,
+        "scale", Vector2f { 1, 1 });
+    mCurrentCmdList->setConstant(ShaderStage::VERTEX,
+        "translate", Vector2f { 0, 0 });
 
     for(auto &&e : mRegistry)
     {
