@@ -26,9 +26,6 @@
 #include <string>
 #include <filesystem>
 
-#ifndef FONS_SCRATCH_BUF_SIZE
-#	define FONS_SCRATCH_BUF_SIZE 64000
-#endif
 #ifndef FONS_HASH_LUT_SIZE
 #	define FONS_HASH_LUT_SIZE 1024
 #endif
@@ -195,8 +192,6 @@ struct FONScontext
     std::vector<float> verts;
     std::vector<float> tcoords;
     std::vector<unsigned int> colors;
-    std::unique_ptr<unsigned char[]> scratch;
-    int nscratch;
     std::vector<FONSstate> states;
     void (*handleError)(void *uptr, int error, int val);
     void *errorUptr;
@@ -289,7 +284,6 @@ struct FONScontext
         float y,
         const char *str,
         const char *end);
-    int fonsTextIterNext(FONStextIter *iter, struct FONSquad *quad);
 
     // Pull texture changes
     const unsigned char * fonsGetTextureData(int *width, int *height);

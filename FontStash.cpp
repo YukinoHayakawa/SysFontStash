@@ -214,60 +214,6 @@ int fons__maxi(int a, int b)
     return a > b ? a : b;
 }
 
-// Copyright (c) 2008-2010 Bjoern Hoehrmann <bjoern@hoehrmann.de>
-// See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ for details.
-
-#define FONS_UTF8_ACCEPT 0
-#define FONS_UTF8_REJECT 12
-
-unsigned int fons__decutf8(
-    unsigned int *state,
-    unsigned int *codep,
-    unsigned int byte)
-{
-    static const unsigned char utf8d[] = {
-        // The first part of the table maps bytes to character classes that
-        // to reduce the size of the transition table and create bitmasks.
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9, 9, 9, 9, 9, 9, 9, 9,
-        9, 9, 9, 9, 9, 9, 9, 9,
-        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-        7, 7, 7, 7, 7, 7, 7, 7,
-        8, 8, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2,
-        10, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 11, 6, 6, 6, 5, 8, 8,
-        8, 8, 8, 8, 8, 8, 8, 8, 8,
-
-        // The second part is a transition table that maps a combination
-        // of a state of the automaton and a character class to a state.
-        0, 12, 24, 36, 60, 96, 84, 12, 12, 12, 48, 72, 12, 12, 12, 12, 12, 12,
-        12, 12, 12, 12, 12, 12,
-        12, 0, 12, 12, 12, 12, 12, 0, 12, 0, 12, 12, 12, 24, 12, 12, 12, 12, 12,
-        24, 12, 24, 12, 12,
-        12, 12, 12, 12, 12, 12, 12, 24, 12, 12, 12, 12, 12, 24, 12, 12, 12, 12,
-        12, 12, 12, 24, 12, 12,
-        12, 12, 12, 12, 12, 12, 12, 36, 12, 36, 12, 12, 12, 36, 12, 12, 12, 12,
-        12, 36, 12, 36, 12, 12,
-        12, 36, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
-    };
-
-    unsigned int type = utf8d[byte];
-
-    *codep = (*state != FONS_UTF8_ACCEPT)
-                 ? (byte & 0x3fu) | (*codep << 6)
-                 : (0xff >> type) & (byte);
-
-    *state = utf8d[256 + *state + type];
-    return *state;
-}
-
 // Atlas based on Skyline Bin Packer by Jukka Jylänki
 
 
@@ -453,8 +399,6 @@ void FONScontext::fons__addWhiteRect(int w, int h)
 void FONScontext::init(FONSparams params_)
 {
     params = params_;
-    // Allocate scratch buffer.
-    scratch.reset(new unsigned char[FONS_SCRATCH_BUF_SIZE]);
 
     // Initialize implementation library
     if(!fons__tt_init(this)) throw std::runtime_error("init failed");
@@ -544,7 +488,6 @@ int FONScontext::fonsAddFontMem(
     font->data = std::move(data);
 
     // Init font
-    nscratch = 0;
     if(!fons__tt_loadFont(this, &font->font, (unsigned char*)font->data.data(), (int)font->data.size()))
         throw std::runtime_error("failed to load font");
 
@@ -670,9 +613,6 @@ FONSglyph * FONScontext::getGlyph(
     if(iblur > 20) iblur = 20;
     pad = iblur + 2;
 
-    // Reset allocator.
-    nscratch = 0;
-
     // Find code point and size.
     h = fons__hashint(codepoint) & (FONS_HASH_LUT_SIZE - 1);
     i = font->lut[h];
@@ -739,7 +679,7 @@ FONSglyph * FONScontext::getGlyph(
 
     // Insert char to hash lookup.
     glyph->next = font->lut[h];
-    font->lut[h] = (int)font->glyphs.size() - 1;
+    font->lut[h] = (int)(font->glyphs.size() - 1);
 
     // Rasterize
     dst = &texData[(glyph->x0 + pad) + (glyph->y0 + pad) * params.width];
@@ -772,7 +712,6 @@ FONSglyph * FONScontext::getGlyph(
     // Blur
     if(iblur > 0)
     {
-        nscratch = 0;
         bdst = &texData[glyph->x0 + glyph->y0 * params.width];
         fons__blur(bdst, gw, gh, params.width, iblur);
     }
@@ -1051,37 +990,6 @@ int FONScontext::fonsTextIterInit(
     iter->end = end;
     iter->codepoint = 0;
     iter->prevGlyphIndex = -1;
-
-    return 1;
-}
-
-int FONScontext::fonsTextIterNext(FONStextIter *iter, FONSquad *quad)
-{
-    FONSglyph *glyph = NULL;
-    const char *str = iter->next;
-    iter->str = iter->next;
-
-    if(str == iter->end)
-        return 0;
-
-    for(; str != iter->end; str++)
-    {
-        if(fons__decutf8(&iter->utf8state, &iter->codepoint,
-            *(const unsigned char*)str))
-            continue;
-        str++;
-        // Get glyph and quad
-        iter->x = iter->nextx;
-        iter->y = iter->nexty;
-        glyph = getGlyph(iter->font, iter->codepoint, iter->isize,
-            iter->iblur);
-        if(glyph != NULL)
-            fons__getQuad(iter->font, iter->prevGlyphIndex, glyph,
-                iter->scale, iter->spacing, &iter->nextx, &iter->nexty, quad);
-        iter->prevGlyphIndex = glyph != NULL ? glyph->index : -1;
-        break;
-    }
-    iter->next = str;
 
     return 1;
 }

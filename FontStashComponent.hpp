@@ -9,7 +9,7 @@ namespace usagi
 struct FontStashComponent : Component
 {
     int font = 0;
-    int align = FONS_ALIGN_LEFT;
+    int align = FONS_ALIGN_LEFT | FONS_ALIGN_BASELINE;
     float size = 48;
     unsigned int color = 0xFFFFFFFF;
     float blur = 0;
