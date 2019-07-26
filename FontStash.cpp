@@ -416,6 +416,7 @@ void FONScontext::init(FONSparams params_)
     itw = 1.0f / params.width;
     ith = 1.0f / params.height;
     texData.reset(new unsigned char[params.width * params.height]);
+    memset(texData.get(), 0, params.width * params.height);
 
     dirtyRect[0] = params.width;
     dirtyRect[1] = params.height;
