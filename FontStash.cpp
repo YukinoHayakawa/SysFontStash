@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <utf8.h>
 #include <Usagi/Utility/File.hpp>
+#include <Usagi/Core/Lerp.hpp>
 
 #define FONS_NOTUSED(v)  (void)sizeof(v)
 
@@ -250,7 +251,7 @@ void FONSatlas::fons__atlasExpand(int w, int h)
     height = h;
 }
 
-void FONSatlas::fons__atlasReset( int w, int h)
+void FONSatlas::fons__atlasReset(int w, int h)
 {
     width = w;
     height = h;
@@ -272,7 +273,7 @@ int FONSatlas::fons__atlasAddSkylineLevel(
     int i;
 
     // Insert new node
-    if(fons__atlasInsertNode( idx, x, y + h, w) == 0)
+    if(fons__atlasInsertNode(idx, x, y + h, w) == 0)
         return 0;
 
     // Delete skyline segments that fall under the shadow of the new segment.
@@ -302,7 +303,7 @@ int FONSatlas::fons__atlasAddSkylineLevel(
     }
 
     // Merge same height skyline segments that are next to each other.
-    for(i = 0; i < nodes.size()- 1; i++)
+    for(i = 0; i < nodes.size() - 1; i++)
     {
         if(nodes[i].y == nodes[i + 1].y)
         {
@@ -345,7 +346,7 @@ int FONSatlas::fons__atlasAddRect(int rw, int rh, int *rx, int *ry)
     // Bottom left fit heuristic.
     for(i = 0; i < nodes.size(); i++)
     {
-        int y = fons__atlasRectFits( i, rw, rh);
+        int y = fons__atlasRectFits(i, rw, rh);
         if(y != -1)
         {
             if(y + rh < besth || (y + rh == besth && nodes[i].width <
@@ -377,7 +378,7 @@ void FONScontext::fons__addWhiteRect(int w, int h)
 {
     int x, y, gx, gy;
     unsigned char *dst;
-    if(atlas.fons__atlasAddRect( w, h, &gx, &gy) == 0)
+    if(atlas.fons__atlasAddRect(w, h, &gx, &gy) == 0)
         return;
 
     // Rasterize
@@ -443,7 +444,7 @@ int FONScontext::addFallbackFont(int base, int fallback)
 
 void FONScontext::pushState()
 {
-    states.push_back(states.empty() ? FONSstate {} : states.back());
+    states.push_back(states.empty() ? FONSstate { } : states.back());
 }
 
 void FONScontext::popState()
@@ -461,7 +462,9 @@ void FONScontext::clearState()
     *state = FONSstate();
 }
 
-int FONScontext::fonsAddFont(std::string name, const std::filesystem::path &path)
+int FONScontext::fonsAddFont(
+    std::string name,
+    const std::filesystem::path &path)
 {
     const auto data = usagi::readFileAsString(path);
     return fonsAddFontMem(std::move(name), std::move(data));
@@ -488,7 +491,8 @@ int FONScontext::fonsAddFontMem(
     font->data = std::move(data);
 
     // Init font
-    if(!fons__tt_loadFont(this, &font->font, (unsigned char*)font->data.data(), (int)font->data.size()))
+    if(!fons__tt_loadFont(this, &font->font, (unsigned char*)font->data.data(),
+        (int)font->data.size()))
         throw std::runtime_error("failed to load font");
 
     // Store normalized line height. The real line height is got
@@ -873,8 +877,13 @@ float FONScontext::getVerticalAlign(FONSfont *font, int align, short isize)
 }
 
 float FONScontext::drawText(
-    std::string_view str, const usagi::AlignedBox2f &bound)
+    std::string_view str,
+    const usagi::AlignedBox2f &bound,
+    float transition_begin,
+    float transition_end)
 {
+    if(str.empty()) return bound.min().x();
+
     float x = bound.min().x();
     float y = bound.min().y();
     FONSstate *state = getState();
@@ -895,6 +904,11 @@ float FONScontext::drawText(
     if(font->data.empty())
         throw std::runtime_error("invalid font data");
 
+
+    u32str.clear();
+    utf8::utf8to32(str.begin(), str.end(), std::back_inserter(u32str));
+
+
     scale = fons__tt_getPixelHeightScale(&font->font, (float)isize / 10.0f);
 
     // Align horizontally
@@ -904,20 +918,48 @@ float FONScontext::drawText(
     }
     else if(state->align & FONS_ALIGN_RIGHT)
     {
-        width = fonsTextBounds(x, y, str, NULL);
+        width = fonsTextBounds(x, y, u32str, NULL);
         x -= width;
     }
     else if(state->align & FONS_ALIGN_CENTER)
     {
-        width = fonsTextBounds(x, y, str, NULL);
+        width = fonsTextBounds(x, y, u32str, NULL);
         x -= width * 0.5f;
     }
     // Align vertically.
     y += getVerticalAlign(font, state->align, isize);
 
-    for(auto iter = str.begin(); iter != str.end();)
+    auto tSize = u32str.size();
+    transition_begin = std::max(transition_begin, 0.f);
+    transition_end = std::min(transition_end, 1.f);
+    const float tBeginPos = (tSize * transition_begin);
+    const float tEndPos = (tSize * transition_end);
+    assert(tEndPos >= tBeginPos);
+    assert(tEndPos <= tSize);
+
+    float i = 0;
+    for(auto &&codepoint : u32str)
     {
-        const auto codepoint = utf8::next(iter, str.end());
+        uint8_t alpha = (state->color & 0xff000000) >> 24;
+
+        if(tBeginPos != tEndPos)
+        {
+            if(i >= tEndPos)
+            {
+                alpha = 0;
+            }
+            else if(i >= tBeginPos)
+            {
+                alpha = usagi::lerp(
+                    usagi::lerpCoefficient(i, tBeginPos, tEndPos),
+                    alpha,
+                    uint8_t(0));
+            }
+        }
+
+        uint32_t real_color = state->color & 0x00ffffff;
+        real_color |= alpha << 24;
+
         glyph = getGlyph(font, codepoint, isize, iblur);
 
         if(glyph != NULL)
@@ -934,73 +976,18 @@ float FONScontext::drawText(
                     state->spacing, &x, &y, &q);
             }
 
-            vertex(q.x0, q.y0, q.s0, q.t0, state->color);
-            vertex(q.x1, q.y1, q.s1, q.t1, state->color);
-            vertex(q.x1, q.y0, q.s1, q.t0, state->color);
+            vertex(q.x0, q.y0, q.s0, q.t0, real_color);
+            vertex(q.x1, q.y1, q.s1, q.t1, real_color);
+            vertex(q.x1, q.y0, q.s1, q.t0, real_color);
 
-            vertex(q.x0, q.y0, q.s0, q.t0, state->color);
-            vertex(q.x0, q.y1, q.s0, q.t1, state->color);
-            vertex(q.x1, q.y1, q.s1, q.t1, state->color);
+            vertex(q.x0, q.y0, q.s0, q.t0, real_color);
+            vertex(q.x0, q.y1, q.s0, q.t1, real_color);
+            vertex(q.x1, q.y1, q.s1, q.t1, real_color);
         }
         prevGlyphIndex = glyph != NULL ? glyph->index : -1;
+        i += 1;
     }
     return x;
-}
-
-int FONScontext::fonsTextIterInit(
-    FONStextIter *iter,
-    float x,
-    float y,
-    const char *str,
-    const char *end)
-{
-    FONSstate *state = getState();
-    float width;
-
-    memset(iter, 0, sizeof(*iter));
-
-    if(state->font < 0 || state->font >= fonts.size())
-        throw std::
-            runtime_error("invalid font index");
-    iter->font = &fonts[state->font];
-    if(iter->font->data.empty()) return 0;
-
-    iter->isize = (short)(state->size * 10.0f);
-    iter->iblur = (short)state->blur;
-    iter->scale = fons__tt_getPixelHeightScale(&iter->font->font,
-        (float)iter->isize / 10.0f);
-
-    // Align horizontally
-    if(state->align & FONS_ALIGN_LEFT)
-    {
-        // empty
-    }
-    else if(state->align & FONS_ALIGN_RIGHT)
-    {
-        width = fonsTextBounds(x, y, str, NULL);
-        x -= width;
-    }
-    else if(state->align & FONS_ALIGN_CENTER)
-    {
-        width = fonsTextBounds(x, y, str, NULL);
-        x -= width * 0.5f;
-    }
-    // Align vertically.
-    y += getVerticalAlign(iter->font, state->align, iter->isize);
-
-    if(end == NULL)
-        end = str + strlen(str);
-
-    iter->x = iter->nextx = x;
-    iter->y = iter->nexty = y;
-    iter->spacing = state->spacing;
-    iter->str = str;
-    iter->next = str;
-    iter->end = end;
-    iter->codepoint = 0;
-    iter->prevGlyphIndex = -1;
-
-    return 1;
 }
 
 void FONScontext::fonsDrawDebug(float x, float y)
@@ -1052,7 +1039,7 @@ void FONScontext::fonsDrawDebug(float x, float y)
 float FONScontext::fonsTextBounds(
     float x,
     float y,
-    std::string_view str,
+    std::u32string_view str,
     float *bounds)
 {
     FONSstate *state = getState();
@@ -1081,10 +1068,8 @@ float FONScontext::fonsTextBounds(
     miny = maxy = y;
     startx = x;
 
-    for(auto iter = str.begin(); iter != str.end();)
+    for(auto &&codepoint : str)
     {
-        const auto codepoint = utf8::next(iter, str.end());
-
         glyph = getGlyph(font, codepoint, isize, iblur);
         if(glyph != NULL)
         {
@@ -1250,7 +1235,7 @@ int FONScontext::fonsExpandAtlas(int width, int height)
     if(params.renderResize == NULL ||
         params.renderResize(params.userPtr, width, height) == 0)
     {
-            throw std::runtime_error("failed to expand atlas");
+        throw std::runtime_error("failed to expand atlas");
     }
     // Copy old texture data over.
     newdata.reset(new unsigned char[width * height]);

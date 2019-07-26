@@ -194,6 +194,7 @@ struct FONScontext
     std::vector<float> tcoords;
     std::vector<unsigned int> colors;
     std::vector<FONSstate> states;
+    std::u32string u32str;
     void (*handleError)(void *uptr, int error, int val);
     void *errorUptr;
 
@@ -261,31 +262,21 @@ struct FONScontext
 
     // Draw text
     // returns next horizontal position
-    float drawText(std::string_view str, const usagi::AlignedBox2f &bound);
-
-    float fonsDrawTextWithTransition(
-        float x,
-        float y,
-        const char *string,
-        const char *end,
-        float);
+    float drawText(
+        std::string_view str,
+        const usagi::AlignedBox2f &bound,
+        float transition_begin,
+        float transition_end
+    );
 
     // Measure text
     float fonsTextBounds(
         float x,
         float y,
-        std::string_view str,
+        std::u32string_view str,
         float *bounds);
     void fonsLineBounds(float y, float *miny, float *maxy);
     void fonsVertMetrics(float *ascender, float *descender, float *lineh);
-
-    // Text iterator
-    int fonsTextIterInit(
-        FONStextIter *iter,
-        float x,
-        float y,
-        const char *str,
-        const char *end);
 
     // Pull texture changes
     const unsigned char * fonsGetTextureData(int *width, int *height);

@@ -16,6 +16,9 @@ struct FontStashComponent : Component
     float spacing = 0;
     float line_spacing = 5;
 
+    float transition_begin = 0;
+    float transition_end = 0;
+
     std::string text;
 
     const std::type_info & baseType() override
