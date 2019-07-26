@@ -157,7 +157,7 @@ FontStashSystem::FontStashSystem(Game *game)
     params.renderDelete = dispatchRenderDelete;
     params.userPtr = this;
 
-    mContext = fonsCreateInternal(&params);
+    mContext.init(params);
 
     auto gpu = mGame->runtime()->gpu();
     mPosBuffer = gpu->createBuffer(GpuBufferUsage::VERTEX);
@@ -168,7 +168,6 @@ FontStashSystem::FontStashSystem(Game *game)
 
 FontStashSystem::~FontStashSystem()
 {
-    fonsDeleteInternal(mContext);
 }
 
 void FontStashSystem::update(const Clock &clock)
@@ -266,23 +265,23 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
     {
         auto text = std::get<FontStashComponent *>(e.second);
         auto pos = std::get<Position2DComponent *>(e.second);
-        auto &state = mContext->states[mContext->nstates - 1];
+        auto &state = *mContext.getState();
         state = *reinterpret_cast<FONSstate *>(& text->font);
         // todo don't hard code text shadow
         state.blur = state.size / 8;
         state.color = 0xFF000000;
-        fonsDrawText(mContext,
+        mContext.drawText(
             pos->pos.x(), pos->pos.y(),
-            text->text.c_str(), nullptr
+            text->text
         );
         state.blur = 0;
         state.color = text->color;
-        fonsDrawText(mContext,
+        mContext.drawText(
             pos->pos.x(), pos->pos.y(),
-            text->text.c_str(), nullptr
+            text->text
         );
     }
-    fons__flush(mContext);
+    mContext.flush();
 
     mCurrentCmdList->endRendering();
     mCurrentCmdList->endRecording();
@@ -290,8 +289,8 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
     return std::move(mCurrentCmdList);
 }
 
-int FontStashSystem::addFont(std::string_view name, std::string_view path)
+int FontStashSystem::addFont(std::string name, const std::filesystem::path &path)
 {
-    return fonsAddFont(mContext, name.data(), path.data());
+    return mContext.fonsAddFont(std::move(name), path);
 }
 }

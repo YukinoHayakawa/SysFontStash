@@ -37,7 +37,7 @@ class FontStashSystem final
     std::shared_ptr<GpuSampler> mFontSampler;
     mutable std::shared_ptr<GraphicsCommandList> mCurrentCmdList;
 
-    FONScontext *mContext = nullptr;
+    FONScontext mContext;
 
     // the following dispatching functions all returns non-zeros when succeed
 
@@ -84,6 +84,6 @@ public:
     void createPipelines() override;
     std::shared_ptr<GraphicsCommandList> render(const Clock &clock) override;
 
-    int addFont(std::string_view name, std::string_view path);
+    int addFont(std::string name, const std::filesystem::path &path);
 };
 }
