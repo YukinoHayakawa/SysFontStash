@@ -109,7 +109,6 @@ int fons__tt_getGlyphKernAdvance(FONSttFontImpl *font, int glyph1, int glyph2)
 
 #else
 
-#include <Windows.h>
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_STATIC
 #include <stb_truetype.h>
@@ -874,10 +873,10 @@ float FONScontext::getVerticalAlign(FONSfont *font, int align, short isize)
 }
 
 float FONScontext::drawText(
-    float x,
-    float y,
-    std::string_view str)
+    std::string_view str, const usagi::AlignedBox2f &bound)
 {
+    float x = bound.min().x();
+    float y = bound.min().y();
     FONSstate *state = getState();
     unsigned int utf8state = 0;
     FONSglyph *glyph = NULL;
@@ -925,6 +924,15 @@ float FONScontext::drawText(
         {
             fons__getQuad(font, prevGlyphIndex, glyph, scale,
                 state->spacing, &x, &y, &q);
+            if(x > bound.max().x())
+            {
+                float lh;
+                fonsVertMetrics(nullptr, nullptr, &lh);
+                y += lh + getState()->line_spacing;
+                x = bound.min().x();
+                fons__getQuad(font, prevGlyphIndex, glyph, scale,
+                    state->spacing, &x, &y, &q);
+            }
 
             vertex(q.x0, q.y0, q.s0, q.t0, state->color);
             vertex(q.x1, q.y1, q.s1, q.t1, state->color);

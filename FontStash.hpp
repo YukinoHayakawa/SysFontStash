@@ -25,7 +25,7 @@
 #include <memory>
 #include <string>
 #include <filesystem>
-
+#include <Usagi/Core/Math.hpp>
 #ifndef FONS_HASH_LUT_SIZE
 #	define FONS_HASH_LUT_SIZE 1024
 #endif
@@ -150,6 +150,7 @@ struct FONSstate
     unsigned int color = 0xffffffff;
     float blur = 0;
     float spacing = 0;
+    float line_spacing = 0;
 };
 
 typedef struct FONSstate FONSstate;
@@ -260,7 +261,8 @@ struct FONScontext
 
     // Draw text
     // returns next horizontal position
-    float drawText(float x, float y, std::string_view str);
+    float drawText(std::string_view str, const usagi::AlignedBox2f &bound);
+
     float fonsDrawTextWithTransition(
         float x,
         float y,

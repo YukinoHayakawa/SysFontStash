@@ -264,21 +264,21 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
     for(auto &&e : mRegistry)
     {
         auto text = std::get<FontStashComponent *>(e.second);
-        auto pos = std::get<Position2DComponent *>(e.second);
+        auto pos = std::get<Bound2DComponent *>(e.second);
         auto &state = *mContext.getState();
         state = *reinterpret_cast<FONSstate *>(& text->font);
         // todo don't hard code text shadow
         state.blur = state.size / 8;
         state.color = 0xFF000000;
         mContext.drawText(
-            pos->pos.x(), pos->pos.y(),
-            text->text
+            text->text,
+            pos->bound
         );
         state.blur = 0;
         state.color = text->color;
         mContext.drawText(
-            pos->pos.x(), pos->pos.y(),
-            text->text
+            text->text,
+            pos->bound
         );
     }
     mContext.flush();

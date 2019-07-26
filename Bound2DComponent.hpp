@@ -5,13 +5,13 @@
 
 namespace usagi
 {
-struct Position2DComponent : Component
+struct Bound2DComponent : Component
 {
-    Vector2f pos = Vector2f::Zero();
+    AlignedBox2f bound;
 
     const std::type_info & baseType() override
     {
-        return typeid(Position2DComponent);
+        return typeid(Bound2DComponent);
     }
 };
 }

@@ -5,7 +5,7 @@
 
 #include "FontStash.hpp"
 #include "FontStashComponent.hpp"
-#include "Position2DComponent.hpp"
+#include "Bound2DComponent.hpp"
 
 namespace usagi
 {
@@ -22,7 +22,7 @@ class FontStashSystem final
     : public OverlayRenderingSystem
     , public CollectionSystem<
         FontStashComponent,
-        Position2DComponent
+        Bound2DComponent
     >
 {
     Game *mGame = nullptr;

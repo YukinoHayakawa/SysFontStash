@@ -94,7 +94,7 @@
     <ClInclude Include="FontStash.hpp" />
     <ClInclude Include="FontStashComponent.hpp" />
     <ClInclude Include="FontStashSystem.hpp" />
-    <ClInclude Include="Position2DComponent.hpp" />
+    <ClInclude Include="Bound2DComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FontStash.cpp" />

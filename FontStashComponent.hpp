@@ -14,6 +14,8 @@ struct FontStashComponent : Component
     unsigned int color = 0xFFFFFFFF;
     float blur = 0;
     float spacing = 0;
+    float line_spacing = 5;
+
     std::string text;
 
     const std::type_info & baseType() override

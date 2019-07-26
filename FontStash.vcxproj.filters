@@ -24,7 +24,7 @@
     <ClInclude Include="FontStash.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Position2DComponent.hpp">
+    <ClInclude Include="Bound2DComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
