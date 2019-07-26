@@ -32,25 +32,6 @@
 #ifndef FONS_HASH_LUT_SIZE
 #	define FONS_HASH_LUT_SIZE 1024
 #endif
-#ifndef FONS_INIT_FONTS
-#	define FONS_INIT_FONTS 4
-#endif
-#ifndef FONS_INIT_GLYPHS
-#	define FONS_INIT_GLYPHS 512
-#endif
-#ifndef FONS_INIT_ATLAS_NODES
-#	define FONS_INIT_ATLAS_NODES 512
-#endif
-#ifndef FONS_VERTEX_COUNT
-#	define FONS_VERTEX_COUNT 2048
-#endif
-#ifndef FONS_MAX_STATES
-#	define FONS_MAX_STATES 20
-#endif
-#ifndef FONS_MAX_FALLBACKS
-#	define FONS_MAX_FALLBACKS 20
-#endif
-
 
 enum FONSflags
 {

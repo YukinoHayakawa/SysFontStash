@@ -499,7 +499,7 @@ int FONScontext::addFallbackFont(int base, int fallback)
 
 void FONScontext::pushState()
 {
-    states.push_back(states.back());
+    states.push_back(states.empty() ? FONSstate {} : states.back());
 }
 
 void FONScontext::popState()
@@ -545,7 +545,7 @@ int FONScontext::fonsAddFontMem(
 
     // Init font
     nscratch = 0;
-    if(!fons__tt_loadFont(this, &font->font, (unsigned char*)data.c_str(), (int)data.size()))
+    if(!fons__tt_loadFont(this, &font->font, (unsigned char*)font->data.data(), (int)font->data.size()))
         throw std::runtime_error("failed to load font");
 
     // Store normalized line height. The real line height is got
@@ -712,13 +712,15 @@ FONSglyph * FONScontext::getGlyph(
 
     // Find free spot for the rect in the atlas
     added = atlas.fons__atlasAddRect(gw, gh, &gx, &gy);
-    if(added == 0 && handleError != NULL)
+    if(added == 0)
     {
         // Atlas is full, let the user to resize the atlas (or not), and try again.
-        handleError(errorUptr, FONS_ATLAS_FULL, 0);
+        // handleError(errorUptr, FONS_ATLAS_FULL, 0);
+        fonsExpandAtlas(atlas.width, atlas.height * 2);
         added = atlas.fons__atlasAddRect(gw, gh, &gx, &gy);
     }
-    if(added == 0) return NULL;
+    if(added == 0)
+        throw std::runtime_error("unable to add glyph");
 
     // Init glyph.
     glyph = font->fons__allocGlyph();
@@ -865,7 +867,7 @@ void FONScontext::flush()
     {
         if(params.renderDraw != NULL)
             params.renderDraw(params.userPtr, verts.data(), tcoords.data(),
-                colors.data(), (int)verts.size());
+                colors.data(), (int)(colors.size()));
         verts.clear();
         tcoords.clear();
         colors.clear();
@@ -1328,10 +1330,10 @@ int FONScontext::fonsExpandAtlas(int width, int height)
     flush();
 
     // Create new texture
-    if(params.renderResize != NULL)
+    if(params.renderResize == NULL ||
+        params.renderResize(params.userPtr, width, height) == 0)
     {
-        if(params.renderResize(params.userPtr, width, height) == 0)
-            return 0;
+            throw std::runtime_error("failed to expand atlas");
     }
     // Copy old texture data over.
     newdata.reset(new unsigned char[width * height]);
