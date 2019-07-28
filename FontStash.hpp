@@ -25,7 +25,8 @@
 #include <memory>
 #include <string>
 #include <filesystem>
-#include <Usagi/Core/Math.hpp>
+#include <Usagi/Math/Matrix.hpp>
+#include <Usagi/Math/Bound.hpp>
 #ifndef FONS_HASH_LUT_SIZE
 #	define FONS_HASH_LUT_SIZE 1024
 #endif

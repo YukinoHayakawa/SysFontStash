@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <utf8.h>
 #include <Usagi/Utility/File.hpp>
-#include <Usagi/Core/Lerp.hpp>
+#include <Usagi/Math/Lerp.hpp>
 
 #define FONS_NOTUSED(v)  (void)sizeof(v)
 
