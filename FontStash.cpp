@@ -1263,7 +1263,7 @@ int FONScontext::fonsResetAtlas(int width, int height)
     int i, j;
 
     // Flush pending glyphs.
-    flush();
+    // flush();
 
     // Create new texture
     if(params.renderResize != NULL)
@@ -1277,7 +1277,7 @@ int FONScontext::fonsResetAtlas(int width, int height)
 
     // Clear texture data.
     texData.reset(new unsigned char[width * height]);
-
+    memset(texData.get(), 0, width * height);
     // Reset dirty rect
     dirtyRect[0] = width;
     dirtyRect[1] = height;

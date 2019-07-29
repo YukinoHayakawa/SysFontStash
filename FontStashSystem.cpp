@@ -147,8 +147,8 @@ FontStashSystem::FontStashSystem(Game *game)
 {
     FONSparams params;
 
-    params.width = 1024;
-    params.height = 1024;
+    params.width = 2048;
+    params.height = 2048;
     params.flags = FONS_ZERO_TOPLEFT;
     params.renderCreate = dispatchRenderCreate;
     params.renderResize = dispatchRenderResize;
@@ -261,6 +261,7 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
     mCurrentCmdList->setConstant(ShaderStage::VERTEX,
         "translate", Vector2f { 0, 0 });
 
+    mScaling = 1280.f / 1920.f;
     for(auto &&e : mRegistry)
     {
         auto text = std::get<FontStashComponent *>(e.second);
@@ -270,16 +271,21 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
         // todo don't hard code text shadow
         state.blur = state.size / 8;
         state.color = 0xFF000000;
+        state.size *= mScaling;
+        AlignedBox2f scaled_bound {
+            pos->bound.min() * mScaling,
+            pos->bound.max() * mScaling
+        };
         mContext.drawText(
             text->uft32_text,
-            pos->bound,
+            scaled_bound,
             text->transition_begin, text->transition_end
         );
         state.blur = 0;
         state.color = text->color;
         mContext.drawText(
             text->uft32_text,
-            pos->bound,
+            scaled_bound,
             text->transition_begin, text->transition_end
         );
     }
@@ -294,5 +300,13 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
 int FontStashSystem::addFont(std::string name, const std::filesystem::path &path)
 {
     return mContext.fonsAddFont(std::move(name), path);
+}
+
+void FontStashSystem::setScaling(float scaling)
+{
+    if(scaling == mScaling)
+        return;
+    mScaling = scaling;
+    mContext.fonsResetAtlas(2048, 2048);
 }
 }
