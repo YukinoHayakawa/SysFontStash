@@ -195,9 +195,6 @@ struct FONScontext
     std::vector<float> tcoords;
     std::vector<unsigned int> colors;
     std::vector<FONSstate> states;
-    std::u32string u32str;
-    void (*handleError)(void *uptr, int error, int val);
-    void *errorUptr;
 
     void fons__addWhiteRect(int w, int h);
     FONSstate *getState();
@@ -238,9 +235,6 @@ struct FONScontext
     void init(FONSparams params);
     ~FONScontext();
 
-    void fonsSetErrorCallback(
-        void (*callback)(void *uptr, int error, int val),
-        void *uptr);
     // Returns current atlas size.
     void fonsGetAtlasSize(int *width, int *height);
     // Expands the atlas size.
@@ -264,7 +258,7 @@ struct FONScontext
     // Draw text
     // returns next horizontal position
     float drawText(
-        std::string_view str,
+        std::u32string_view str,
         const usagi::AlignedBox2f &bound,
         float transition_begin,
         float transition_end

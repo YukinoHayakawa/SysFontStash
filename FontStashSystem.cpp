@@ -271,14 +271,14 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
         state.blur = state.size / 8;
         state.color = 0xFF000000;
         mContext.drawText(
-            text->text,
+            text->uft32_text,
             pos->bound,
             text->transition_begin, text->transition_end
         );
         state.blur = 0;
         state.color = text->color;
         mContext.drawText(
-            text->text,
+            text->uft32_text,
             pos->bound,
             text->transition_begin, text->transition_end
         );

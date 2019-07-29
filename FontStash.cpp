@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdexcept>
-#include <utf8.h>
 #include <Usagi/Utility/File.hpp>
 #include <Usagi/Math/Lerp.hpp>
 
@@ -877,7 +876,7 @@ float FONScontext::getVerticalAlign(FONSfont *font, int align, short isize)
 }
 
 float FONScontext::drawText(
-    std::string_view str,
+    std::u32string_view str,
     const usagi::AlignedBox2f &bound,
     float transition_begin,
     float transition_end)
@@ -904,11 +903,6 @@ float FONScontext::drawText(
     if(font->data.empty())
         throw std::runtime_error("invalid font data");
 
-
-    u32str.clear();
-    utf8::utf8to32(str.begin(), str.end(), std::back_inserter(u32str));
-
-
     scale = fons__tt_getPixelHeightScale(&font->font, (float)isize / 10.0f);
 
     // Align horizontally
@@ -918,18 +912,18 @@ float FONScontext::drawText(
     }
     else if(state->align & FONS_ALIGN_RIGHT)
     {
-        width = fonsTextBounds(x, y, u32str, NULL);
+        width = fonsTextBounds(x, y, str, NULL);
         x -= width;
     }
     else if(state->align & FONS_ALIGN_CENTER)
     {
-        width = fonsTextBounds(x, y, u32str, NULL);
+        width = fonsTextBounds(x, y, str, NULL);
         x -= width * 0.5f;
     }
     // Align vertically.
     y += getVerticalAlign(font, state->align, isize);
 
-    auto tSize = u32str.size();
+    auto tSize = str.size();
     transition_begin = std::max(transition_begin, 0.f);
     transition_end = std::min(transition_end, 1.f);
     const float tBeginPos = (tSize * transition_begin);
@@ -938,7 +932,7 @@ float FONScontext::drawText(
     assert(tEndPos <= tSize);
 
     float i = 0;
-    for(auto &&codepoint : u32str)
+    for(auto &&codepoint : str)
     {
         uint8_t alpha = (state->color & 0xff000000) >> 24;
 
@@ -1201,14 +1195,6 @@ FONScontext::~FONScontext()
 {
     if(params.renderDelete)
         params.renderDelete(params.userPtr);
-}
-
-void FONScontext::fonsSetErrorCallback(
-    void (*callback)(void *uptr, int error, int val),
-    void *uptr)
-{
-    handleError = callback;
-    errorUptr = uptr;
 }
 
 void FONScontext::fonsGetAtlasSize(int *width, int *height)

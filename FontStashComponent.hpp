@@ -19,7 +19,7 @@ struct FontStashComponent : Component
     float transition_begin = 0;
     float transition_end = 0;
 
-    std::string text;
+    std::u32string uft32_text;
 
     const std::type_info & baseType() override
     {
