@@ -38,7 +38,7 @@ class FontStashSystem final
     mutable std::shared_ptr<GraphicsCommandList> mCurrentCmdList;
 
     FONScontext mContext;
-    float mScaling = 1.f;
+    float mLastScaling = mScalingFunc();
 
     // the following dispatching functions all returns non-zeros when succeed
 
@@ -86,6 +86,5 @@ public:
     std::shared_ptr<GraphicsCommandList> render(const Clock &clock) override;
 
     int addFont(std::string name, const std::filesystem::path &path);
-    void setScaling(float scaling);
 };
 }

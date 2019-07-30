@@ -261,7 +261,14 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
     mCurrentCmdList->setConstant(ShaderStage::VERTEX,
         "translate", Vector2f { 0, 0 });
 
-    mScaling = 1280.f / 1920.f;
+    // handle resolution changes
+    const auto scaling = mScalingFunc();
+    if(scaling != mLastScaling)
+    {
+        mContext.fonsResetAtlas(2048, 2048);
+        mLastScaling = scaling;
+    }
+
     for(auto &&e : mRegistry)
     {
         auto text = std::get<FontStashComponent *>(e.second);
@@ -271,10 +278,10 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
         // todo don't hard code text shadow
         state.blur = state.size / 8;
         state.color = 0xFF000000;
-        state.size *= mScaling;
+        state.size *= scaling;
         AlignedBox2f scaled_bound {
-            pos->bound.min() * mScaling,
-            pos->bound.max() * mScaling
+            pos->bound.min() * scaling,
+            pos->bound.max() * scaling
         };
         mContext.drawText(
             text->uft32_text,
@@ -300,13 +307,5 @@ std::shared_ptr<GraphicsCommandList> FontStashSystem::render(const Clock &clock)
 int FontStashSystem::addFont(std::string name, const std::filesystem::path &path)
 {
     return mContext.fonsAddFont(std::move(name), path);
-}
-
-void FontStashSystem::setScaling(float scaling)
-{
-    if(scaling == mScaling)
-        return;
-    mScaling = scaling;
-    mContext.fonsResetAtlas(2048, 2048);
 }
 }

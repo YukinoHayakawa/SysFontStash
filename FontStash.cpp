@@ -1263,7 +1263,7 @@ int FONScontext::fonsResetAtlas(int width, int height)
     int i, j;
 
     // Flush pending glyphs.
-    // flush();
+    flush();
 
     // Create new texture
     if(params.renderResize != NULL)
