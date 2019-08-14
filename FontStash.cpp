@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <Usagi/Utility/File.hpp>
 #include <Usagi/Math/Lerp.hpp>
+#include <Usagi/Core/Exception.hpp>
 
 #define FONS_NOTUSED(v)  (void)sizeof(v)
 
@@ -400,13 +401,13 @@ void FONScontext::init(FONSparams params_)
     params = params_;
 
     // Initialize implementation library
-    if(!fons__tt_init(this)) throw std::runtime_error("init failed");
+    if(!fons__tt_init(this)) USAGI_THROW(std::runtime_error("init failed"));
 
     if(params.renderCreate != NULL)
     {
         if(params.renderCreate(params.userPtr, params.width, params.height) == 0
         )
-            throw std::runtime_error("failed to create texture");
+            USAGI_THROW(std::runtime_error("failed to create texture"));
     }
 
     fons__allocAtlas(params.width, params.height);
@@ -450,7 +451,7 @@ void FONScontext::popState()
 {
     if(states.size() <= 1)
     {
-        throw std::runtime_error("state stack underflow");
+        USAGI_THROW(std::runtime_error("state stack underflow"));
     }
     states.pop_back();
 }
@@ -492,7 +493,7 @@ int FONScontext::fonsAddFontMem(
     // Init font
     if(!fons__tt_loadFont(this, &font->font, (unsigned char*)font->data.data(),
         (int)font->data.size()))
-        throw std::runtime_error("failed to load font");
+        USAGI_THROW(std::runtime_error("failed to load font"));
 
     // Store normalized line height. The real line height is got
     // by multiplying the lineh by font size.
@@ -663,7 +664,7 @@ FONSglyph * FONScontext::getGlyph(
         added = atlas.fons__atlasAddRect(gw, gh, &gx, &gy);
     }
     if(added == 0)
-        throw std::runtime_error("unable to add glyph");
+        USAGI_THROW(std::runtime_error("unable to add glyph"));
 
     // Init glyph.
     glyph = font->fons__allocGlyph();
@@ -897,11 +898,11 @@ float FONScontext::drawText(
     float width;
 
     if(state->font < 0 || state->font >= fonts.size())
-        throw std::runtime_error("invalid font index");
+        USAGI_THROW(std::runtime_error("invalid font index"));
 
     font = &fonts[state->font];
     if(font->data.empty())
-        throw std::runtime_error("invalid font data");
+        USAGI_THROW(std::runtime_error("invalid font data"));
 
     scale = fons__tt_getPixelHeightScale(&font->font, (float)isize / 10.0f);
 
@@ -1048,10 +1049,10 @@ float FONScontext::fonsTextBounds(
     float minx, miny, maxx, maxy;
 
     if(state->font < 0 || state->font >= fonts.size())
-        throw std::runtime_error("invalid font index");
+        USAGI_THROW(std::runtime_error("invalid font index"));
     font = &fonts[state->font];
     if(font->data.empty())
-        throw std::runtime_error("invalid font data");
+        USAGI_THROW(std::runtime_error("invalid font data"));
 
     scale = fons__tt_getPixelHeightScale(&font->font, (float)isize / 10.0f);
 
@@ -1124,8 +1125,8 @@ void FONScontext::fonsVertMetrics(
     short isize;
 
     if(state->font < 0 || state->font >= fonts.size())
-        throw std::
-            runtime_error("invalid font index");
+        USAGI_THROW(std::
+            runtime_error("invalid font index"));
     font = &fonts[state->font];
     isize = (short)(state->size * 10.0f);
     if(font->data.empty()) return;
@@ -1144,8 +1145,8 @@ void FONScontext::fonsLineBounds(float y, float *miny, float *maxy)
     FONSstate *state = getState();
     short isize;
     if(state->font < 0 || state->font >= fonts.size())
-        throw std::
-            runtime_error("invalid font index");
+        USAGI_THROW(std::
+            runtime_error("invalid font index"));
     font = &fonts[state->font];
     isize = (short)(state->size * 10.0f);
     if(font->data.empty()) return;
@@ -1221,7 +1222,7 @@ int FONScontext::fonsExpandAtlas(int width, int height)
     if(params.renderResize == NULL ||
         params.renderResize(params.userPtr, width, height) == 0)
     {
-        throw std::runtime_error("failed to expand atlas");
+        USAGI_THROW(std::runtime_error("failed to expand atlas"));
     }
     // Copy old texture data over.
     newdata.reset(new unsigned char[width * height]);
