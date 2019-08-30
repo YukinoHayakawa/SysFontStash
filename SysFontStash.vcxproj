@@ -12,8 +12,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{d8a19853-2808-4822-ba5c-c1c114935695}</ProjectGuid>
-    <RootNamespace>FontStash</RootNamespace>
+    <ProjectGuid>{91483d44-b6cb-4921-9167-6249f2ae2ca8}</ProjectGuid>
+    <RootNamespace>SysFontStash</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -91,17 +91,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Bound2DComponent.hpp" />
     <ClInclude Include="FontStash.hpp" />
     <ClInclude Include="FontStashComponent.hpp" />
     <ClInclude Include="FontStashSystem.hpp" />
-    <ClInclude Include="Bound2DComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FontStash.cpp" />
     <ClCompile Include="FontStashSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Usagi\Usagi\Usagi.vcxproj">
+    <ProjectReference Include="..\..\..\..\Usagi\Usagi\Usagi.vcxproj">
       <Project>{4250e1c0-ea0b-4575-bc04-11e7f83c2ed4}</Project>
     </ProjectReference>
   </ItemGroup>
